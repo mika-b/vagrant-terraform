@@ -1,0 +1,10 @@
+*.gem
+.bundle
+*.log
+/Vagrantfile*
+.vagrant
+/.idea
+*.gem
+/manifests
+vendor
+tmp

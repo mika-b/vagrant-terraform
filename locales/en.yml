@@ -1,0 +1,50 @@
+en:
+  vagrant_terraform:
+    creating_vm: |-
+      Creating VM with the following settings...
+    starting_vm: |-
+      Starting VM.
+    not_created: |-
+      VM is not created. Please run `vagrant up` first.
+    not_up: |-
+      VM is not running. Please run `vagrant up` first.
+    powering_up: |-
+      VM is currently powering up. Please run `vagrant halt` to abort or wait until its status is 'up'.
+    error_recovering: |-
+      An error occured. Recovering..
+    waiting_for_ip: |-
+      Waiting for VM to get an IP address...
+    ready: |-
+      Machine is booted and ready for use!
+    halt_vm: |-
+      Halting VM...
+    destroy_vm: |-
+      Removing VM...
+    already_up: |-
+      VM is already up.
+    states:
+      long_running: |-
+        The instance is running. Use `vagrant halt` to stop it.
+      short_running: |-
+        running
+      short_stopped: |-
+        stopped
+      long_down: |-
+        The instance is not running. Use `vagrant up` to start it.
+      short_down: |-
+        down
+      long_not_created: |-
+        The instance is not created. Use `vagrant up` to create it.
+      short_not_created: |-
+        not created
+    errors:
+      no_vm_error: |-
+        No VM found with id '%{vm_id}'
+      create_vm_error: |-
+        Creation failed. Terraform error message was '%{error_message}'
+      start_vm_error: |-
+        Unable to start VM: %{error_message}
+      no_ip_error: |-
+        The VM has not reported an IP address. Please ensure the qemu-guest-agent is running and the machine is up.
+      terraform_execution_error: |-
+        Terraforming failed. Error was '%{error_message}'

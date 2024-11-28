@@ -1,0 +1,14 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure("2") do |config|
+  config.vm.box = 'terraform'
+  #config.vm.box_url = 'https://github.com/mika-b/vagrant-terraform/blob/master/example_box/dummy.box?raw=true'
+
+  config.vm.provider :terraform do |terraform|
+    terraform.api_url = 'https://server:8006/api2/json'
+    terraform.api_token_id = "terraform@pam!automation"
+    terraform.api_token_secret = "password"
+    terraform.insecure = true
+    terraform.debug = true
+  end
+end
