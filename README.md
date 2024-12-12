@@ -84,7 +84,7 @@ qm template 9001
 ```
 Vagrant.configure("2") do |config|
   config.vm.box = 'dummy'
-  config.vm.box_url = 'https://github.com/mika-b/vagrant-terraform/blob/master/example_box/dummy.box?raw=true'
+  config.vm.box_url = 'https://github.com/mika-b/vagrant-terraform/blob/main/example_box/dummy.box?raw=true'
 
   config.vm.hostname = "example-vm.local"
 
