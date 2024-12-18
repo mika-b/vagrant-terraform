@@ -98,7 +98,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "telmate/proxmox"
-      version = "3.0.1-rc4"
+      version = "3.0.1-rc6"
       #version = ">= 3.0.1-rc3"
     }
   }
@@ -106,6 +106,7 @@ terraform {
  END
           network_template = <<-END
     network {
+        id = %IDX%
         bridge    = "%BRIDGE%"
         firewall  = false
         link_down = false
@@ -160,7 +161,6 @@ END
           retryable(on: Errors::TerraformError, tries: 10, sleep: 1) do
             begin
               terraform_execute(env, "terraform apply -auto-approve")
-
             rescue Errors::TerraformError => e
               # ==> vm_one: terraform stderr: ╷
               # ==> vm_one: │ Error: can't lock file '/var/lock/qemu-server/lock-100.conf' - got timeout
