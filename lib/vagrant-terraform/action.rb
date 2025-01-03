@@ -153,7 +153,7 @@ module VagrantPlugins
 
           b.use Call, ReadState do |env, b2|
             if env[:machine_state_id] == :not_created
-              b2.use MessageNotCreated
+              env[:ui].info(I18n.t("vagrant_terraform.not_created"))
               next
             end
             if env[:machine_state_id] != :running
