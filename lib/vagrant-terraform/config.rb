@@ -18,6 +18,7 @@ module VagrantPlugins
       attr_accessor :cpu_cores
       attr_accessor :memory_size
       attr_accessor :target_node
+      attr_accessor :onboot
       attr_accessor :description
       attr_accessor :nameserver
       attr_accessor :searchdomain
@@ -37,6 +38,7 @@ module VagrantPlugins
         @cpu_cores         = UNSET_VALUE
         @memory_size       = UNSET_VALUE
         @target_node       = UNSET_VALUE
+        @onboot            = UNSET_VALUE
         @description       = UNSET_VALUE
         @nameserver        = UNSET_VALUE
         @searchdomain      = UNSET_VALUE
@@ -57,6 +59,7 @@ module VagrantPlugins
         @cpu_cores = 1 if @cpu_cores == UNSET_VALUE
         @memory_size = '512 MiB' if @memory_size == UNSET_VALUE
         @target_node = nil if @target_node == UNSET_VALUE
+        @onboot = false if @onboot == UNSET_VALUE
         @description = '' if @description == UNSET_VALUE
         @nameserver = '' if @nameserver == UNSET_VALUE
         @searchdomain = '' if @searchdomain == UNSET_VALUE
