@@ -54,7 +54,7 @@ resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
     onboot = #{config.onboot}
     agent      = 1
     vga {
-        type   = "virtio"
+        type   = "#{config.vga}"
         # Between 4 and 512, ignored if type is defined to serial
         memory = 64
     }

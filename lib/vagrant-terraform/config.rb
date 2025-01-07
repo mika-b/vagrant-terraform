@@ -9,6 +9,7 @@ module VagrantPlugins
       attr_accessor :api_url
       attr_accessor :api_token_id
       attr_accessor :api_token_secret
+      attr_accessor :vga
       attr_accessor :insecure
       attr_accessor :debug
       attr_accessor :vmname
@@ -29,6 +30,7 @@ module VagrantPlugins
         @api_url           = UNSET_VALUE
         @api_token_id      = UNSET_VALUE
         @api_token_secret  = UNSET_VALUE
+        @vga           = UNSET_VALUE
         @insecure          = UNSET_VALUE
         @debug             = UNSET_VALUE
         @vmname            = UNSET_VALUE
@@ -50,6 +52,7 @@ module VagrantPlugins
         @api_url = nil if @api_url == UNSET_VALUE
         @api_token_id = nil if @api_token_id == UNSET_VALUE
         @api_token_secret = nil if @api_token_secret == UNSET_VALUE
+        @vga = 'virtio' if @vga == UNSET_VALUE
         @insecure = false if @insecure == UNSET_VALUE
         @debug = false if @debug == UNSET_VALUE
         @vmname = nil if @vmname == UNSET_VALUE
