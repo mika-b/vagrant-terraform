@@ -42,13 +42,14 @@ module VagrantPlugins
           # Wait for VM to obtain an ip address.
           env[:metrics]["instance_ip_time"] = Util::Timer.time do
             env[:ui].info(I18n.t("vagrant_terraform.waiting_for_ip"))
-            for _ in 1..300
+            for attempt in 1..300
               # If we're interrupted don't worry about waiting
               next if env[:interrupted]
 
-              ip_addr = terraform_execute(env, "terraform output -raw public_ip")
+              output = terraform_execute(env, "terraform refresh")
+              ip_addr = output.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)&.to_s
               unless ip_addr.nil?
-                env[:ui].info("Got IP: #{ip_addr}")
+                env[:ui].info("Got IP (attempt #{attempt}): #{ip_addr}")
                 # Check if SSH-Server is up
                 if port_open?(ip_addr, 22)
                   env[:ip_address] = ip_addr
@@ -59,14 +60,15 @@ module VagrantPlugins
               sleep 2
             end
           end
+
           terminate(env) if env[:interrupted]
+
           if env[:ip_address].nil?
+            env[:ui].error("failed to get IP: #{env[:metrics]["instance_ip_time"]}")
             raise Errors::NoIPError
           else
             @logger.info("Got IP address #{env[:ip_address]}")
             @logger.info("Time for getting IP: #{env[:metrics]["instance_ip_time"]}")
-
-            @logger.info("Time for SSH ready: #{env[:metrics]["instance_ssh_time"]}")
 
             # Booted and ready for use.
             env[:ui].info(I18n.t("vagrant_terraform.ready"))
@@ -95,4 +97,3 @@ module VagrantPlugins
     end
   end
 end
-
