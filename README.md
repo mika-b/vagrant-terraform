@@ -7,7 +7,6 @@ Could be extended to support other Terraform providers in addition to Proxmox bu
 the moment I'm not planning to.
 
 Things I'm _not_ planning to do (due to lack of time and resources):
-* Put this in rubygems.org. If you want to use this, roll your own gem like instructed below.
 * Support other Terraform providers unless I have to move away from Proxmox to something else.
 * Add support for suspend / snapshots.
 * Support / test anything other than Ubuntu/Fedora
@@ -15,6 +14,12 @@ Things I'm _not_ planning to do (due to lack of time and resources):
 
 ## Installation
 
+From rubygems.org
+```
+vagrant plugin install vagrant-terraform
+```
+
+Build & install:
 ```
 $ gem build *.gemspec
 $ vagrant plugin install *.gem
