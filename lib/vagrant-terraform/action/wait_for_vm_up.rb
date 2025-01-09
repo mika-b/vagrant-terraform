@@ -1,8 +1,9 @@
 require 'log4r'
-require 'vagrant-terraform/util/timer'
-require 'vagrant-terraform/util/terraform_execute'
 require 'socket'
 require 'timeout'
+require 'vagrant-terraform/util/timer'
+require 'vagrant-terraform/util/terraform_execute'
+Vagrant.require 'net/ssh'
 
 module VagrantPlugins
   module TerraformProvider
@@ -18,21 +19,24 @@ module VagrantPlugins
           @app = app
         end
 
-        def port_open?(ip, port, seconds=10)
-          # => checks if a port is open or not on a remote host
-          Timeout::timeout(seconds) do
+        def port_open?(ip)
+          # Check if ssh server responds, AuthenticationFailed is what we expect to get.
+          # If credentials vagrant:vagrant happen to work that's a success as well.
+          begin
             begin
-              TCPSocket.new(ip, port).close
-              @logger.info("SSH Check OK for IP: #{ip}")
-              true
-            rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH, SocketError => e
-              @logger.info("SSH Connection Failed for IP #{ip}: #{e}")
-              false
+              ssh = Net::SSH.start(ip, "vagrant", password: "vagrant",
+                                   non_interactive: true, user_known_hosts_file: [],
+                                   verify_host_key: :never)
+            ensure
+              ssh&.close
             end
+            return true
+          rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH
+            return false
+          rescue Net::SSH::AuthenticationFailed
+            return true
           end
-        rescue Timeout::Error
-          @logger.info("SSH Connection Failed: Timeout for IP: #{ip}" )
-          false
+          return false
         end
 
         def call(env)
@@ -51,7 +55,7 @@ module VagrantPlugins
               unless ip_addr.nil?
                 env[:ui].info("Got IP (attempt #{attempt}): #{ip_addr}")
                 # Check if SSH-Server is up
-                if port_open?(ip_addr, 22)
+                if port_open?(ip_addr)
                   env[:ip_address] = ip_addr
                   @logger.debug("Got output #{env[:ip_address]}")
                   break
