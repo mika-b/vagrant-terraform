@@ -56,8 +56,8 @@ module VagrantPlugins
             end
 
             b2.use ProvisionerCleanup, :before if defined?(ProvisionerCleanup)
-            b2.use HaltVM unless env[:machine].state.id == :stopped
-            # b2.use WaitTillDown unless env[:machine].state.id == :stopped
+            # Maybe with sshfs clean halting could be beneficial
+            # b2.use HaltVM unless env[:machine].state.id == :stopped
             b2.use DestroyVM
           end
         end
