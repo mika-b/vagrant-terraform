@@ -184,6 +184,18 @@ END
                 raise e
               end
 
+              # Terraform error message was 'clone failed: cfs-lock 'storage-qnap-nfs' error: got lock request timeout'
+              if e.message.gsub(ansi_escape_regex, '').include?("clone failed: cfs-lock")
+                env[:ui].info("Proxmox unable to get storage lock, retrying")
+                raise e
+              end
+
+              # Terraform error message was 'clone failed: 'storage-qnap-nfs'-locked command timed out - aborting'
+              if e.message.gsub(ansi_escape_regex, '').include?("command timed out")
+                env[:ui].info("Proxmox clone template, retrying")
+                raise e
+              end
+
               if e.message.gsub(ansi_escape_regex, '') =~ /.*Error: [0-9 ]*unable to create VM [0-9]*: config file already exists/
                 env[:ui].info("Proxmox ID conflict, retrying")
                 raise e

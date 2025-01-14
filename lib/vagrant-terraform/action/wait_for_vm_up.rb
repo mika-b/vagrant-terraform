@@ -35,6 +35,12 @@ module VagrantPlugins
             return false
           rescue Net::SSH::AuthenticationFailed
             return true
+          rescue Errno::ECONNRESET
+            @logger.debug("Got connection reset")
+            return false
+          rescue StandardError => e
+            @logger.debug("Got error #{e.message}")
+            return false
           end
           return false
         end
@@ -46,7 +52,7 @@ module VagrantPlugins
           # Wait for VM to obtain an ip address.
           env[:metrics]["instance_ip_time"] = Util::Timer.time do
             env[:ui].info(I18n.t("vagrant_terraform.waiting_for_ip"))
-            for attempt in 1..300
+            for attempt in 1..100
               # If we're interrupted don't worry about waiting
               next if env[:interrupted]
 
