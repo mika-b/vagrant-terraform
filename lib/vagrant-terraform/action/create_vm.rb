@@ -80,6 +80,7 @@ resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
             }
         }
     }
+%SERIAL%
     nameserver = "#{config.nameserver}"
     searchdomain = "#{config.searchdomain}"
 %NETWORKS%
@@ -115,6 +116,18 @@ terraform {
     }
     ipconfig%IDX% = "%IP%"
 END
+
+          serial_template = <<-END
+    serial {
+      id = 0
+      type = "socket"
+    }
+END
+          if config.serial_port
+            main_tf = main_tf.gsub(/%SERIAL%/, serial_template)
+          else
+            main_tf = main_tf.gsub(/%SERIAL%/, '')
+          end
 
           vagrantfile_networks = []
           env[:machine].id = vmname

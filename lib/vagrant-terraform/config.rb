@@ -25,6 +25,7 @@ module VagrantPlugins
       attr_accessor :searchdomain
       attr_accessor :os_type
       attr_accessor :full_clone
+      attr_accessor :serial_port
 
       def initialize
         @api_url           = UNSET_VALUE
@@ -46,6 +47,7 @@ module VagrantPlugins
         @searchdomain      = UNSET_VALUE
         @os_type           = UNSET_VALUE
         @full_clone        = UNSET_VALUE
+        @serial_port       = UNSET_VALUE
       end
 
       def finalize!
@@ -68,6 +70,7 @@ module VagrantPlugins
         @searchdomain = '' if @searchdomain == UNSET_VALUE
         @os_type = 'l26' if @os_type == UNSET_VALUE
         @full_clone = true if @full_clone == UNSET_VALUE
+        @serial_port = false if @serial_port == UNSET_VALUE
 
         unless disk_size.nil?
           begin
