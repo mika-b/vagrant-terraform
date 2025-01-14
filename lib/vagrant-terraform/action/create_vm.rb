@@ -163,8 +163,8 @@ END
           env[:ui].info(" -- Target node:   #{config.target_node}")
           env[:ui].info(" -- Storage domain: #{config.storage_domain}")
           env[:ui].info(" -- CPU Cores:     #{config.cpu_cores}")
-          env[:ui].info(" -- Memory:        #{Filesize.from("#{config.memory_size} B").to_f('MiB').to_i} MB")
-          env[:ui].info(" -- Disk:          #{Filesize.from("#{config.disk_size} B").to_f('GiB').to_i} GB") unless config.disk_size.nil?
+          env[:ui].info(" -- Memory:        #{Filesize.from("#{config.memory_size} B").to_f('MB').to_i} MB")
+          env[:ui].info(" -- Disk:          #{Filesize.from("#{config.disk_size} B").to_f('GB').to_i} GB") unless config.disk_size.nil?
 
           terraform_dir = env[:machine_tf_dir]
           terraform_main_file = "#{terraform_dir}/main.tf"
