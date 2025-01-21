@@ -35,11 +35,17 @@ module VagrantPlugins
             return false
           rescue Net::SSH::AuthenticationFailed
             return true
+          rescue Net::SSH::Disconnect => e
+            @logger.debug("Net::SSH disconnected: #{e.message}")
+            return false
           rescue Errno::ECONNRESET
             @logger.debug("Got connection reset")
             return false
           rescue StandardError => e
             @logger.debug("Got error #{e.message}")
+            return false
+          rescue => e
+            @logger.debug("An error of type #{e.class} happened, message is #{e.message}")
             return false
           end
           return false
