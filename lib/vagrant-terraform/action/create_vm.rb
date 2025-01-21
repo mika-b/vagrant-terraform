@@ -192,7 +192,13 @@ END
 
               # Terraform error message was 'clone failed: 'storage-qnap-nfs'-locked command timed out - aborting'
               if e.message.gsub(ansi_escape_regex, '').include?("command timed out")
-                env[:ui].info("Proxmox clone template, retrying")
+                env[:ui].info("Proxmox clone failed, retrying")
+                raise e
+              end
+
+              # Terraform error message was '500 got no worker upid - start worker failed'
+              if e.message.gsub(ansi_escape_regex, '').include?("got no worker upid")
+                env[:ui].info("Proxmox error: 'got no worker upid', retrying")
                 raise e
               end
 
