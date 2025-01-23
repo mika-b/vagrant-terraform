@@ -203,6 +203,11 @@ END
                 raise e
               end
 
+              # Terraform error message was 'volume 'qnap-nfs:104/vm-104-disk-1.raw' does not exist'
+              if e.message.gsub(ansi_escape_regex, '') =~ /.*volume .* does not exist/
+                env[:ui].info("Volume not created, retrying")
+              end
+
               if e.message.gsub(ansi_escape_regex, '') =~ /.*Error: [0-9 ]*unable to create VM [0-9]*: config file already exists/
                 env[:ui].info("Proxmox ID conflict, retrying")
                 raise e
