@@ -185,7 +185,8 @@ END
               end
 
               # Terraform error message was 'clone failed: cfs-lock 'storage-qnap-nfs' error: got lock request timeout'
-              if e.message.gsub(ansi_escape_regex, '').include?("clone failed: cfs-lock")
+              # Terraform error message was 'storage migration failed: cfs-lock 'storage-qnap-nfs' error: got lock request timeout'
+              if e.message.gsub(ansi_escape_regex, '').include?("error: got lock request timeout")
                 env[:ui].info("Proxmox unable to get storage lock, retrying")
                 raise e
               end
