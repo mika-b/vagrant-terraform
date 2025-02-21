@@ -17,6 +17,7 @@ module VagrantPlugins
       attr_accessor :disk_size
       attr_accessor :storage_domain
       attr_accessor :cpu_cores
+      attr_accessor :cpu_type
       attr_accessor :memory_size
       attr_accessor :target_node
       attr_accessor :onboot
@@ -31,7 +32,7 @@ module VagrantPlugins
         @api_url           = UNSET_VALUE
         @api_token_id      = UNSET_VALUE
         @api_token_secret  = UNSET_VALUE
-        @vga           = UNSET_VALUE
+        @vga               = UNSET_VALUE
         @insecure          = UNSET_VALUE
         @debug             = UNSET_VALUE
         @vmname            = UNSET_VALUE
@@ -39,6 +40,7 @@ module VagrantPlugins
         @disk_size         = UNSET_VALUE
         @storage_domain    = UNSET_VALUE
         @cpu_cores         = UNSET_VALUE
+        @cpu_type          = UNSET_VALUE
         @memory_size       = UNSET_VALUE
         @target_node       = UNSET_VALUE
         @onboot            = UNSET_VALUE
@@ -62,6 +64,7 @@ module VagrantPlugins
         @disk_size = nil if @disk_size == UNSET_VALUE
         @storage_domain = nil if @storage_domain == UNSET_VALUE
         @cpu_cores = 1 if @cpu_cores == UNSET_VALUE
+        @cpu_type = 'host' if @cpu_type == UNSET_VALUE
         @memory_size = '512 MiB' if @memory_size == UNSET_VALUE
         @target_node = nil if @target_node == UNSET_VALUE
         @onboot = false if @onboot == UNSET_VALUE

@@ -45,13 +45,14 @@ provider "proxmox" {
 resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
     name       = "#{vmname}"
     target_nodes = ["#{config.target_node}"]
-    desc = "#{config.description}"
+    desc       = "#{config.description}"
     vm_state   = "stopped"
     clone      = "#{config.template}"
     full_clone = "#{config.full_clone}"
     cores      = #{config.cpu_cores.to_i}
+    cpu_type   = "#{config.cpu_type}"
     memory     = #{Filesize.from("#{config.memory_size} B").to_f('MiB').to_i}
-    onboot = #{config.onboot}
+    onboot     = #{config.onboot}
     agent      = 1
     vga {
         type   = "#{config.vga}"
