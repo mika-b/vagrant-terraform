@@ -171,7 +171,23 @@ END
           terraform_main_file = "#{terraform_dir}/main.tf"
 
           File.write(terraform_main_file, main_tf)
-          terraform_execute(env, 'terraform init')
+
+          retryable(on: Errors::TerraformError, tries: 100, sleep: 1) do
+            begin
+              terraform_execute(env, 'terraform init')
+            rescue Errors::TerraformError => e
+              # https://github.com/hashicorp/terraform/issues/32915
+              # https://github.com/hashicorp/terraform/issues/31964
+              # The message 'text file busy' comes when something is attempting to overwrite the executable
+              # for a running process which is using the same data. The plugin cache is not safe for concurrent
+              # access, and overwriting running providers can result in unexpected behavior.
+              ansi_escape_regex = /\e\[(?:[0-9]{1,2}(?:;[0-9]{1,2})*)?[m|K]/
+              if e.message.gsub(ansi_escape_regex, '').include?("Failed to install provider")
+                @logger.debug("Failed to install provider, retrying")
+                raise e
+              end
+            end
+          end
 
           retryable(on: Errors::TerraformError, tries: 10, sleep: 1) do
             begin
@@ -194,7 +210,7 @@ END
 
               # Terraform error message was 'clone failed: 'storage-qnap-nfs'-locked command timed out - aborting'
               if e.message.gsub(ansi_escape_regex, '').include?("command timed out")
-                env[:ui].info("Proxmox clone failed, retrying")
+                env[:ui].info("Proxmox clone failed with command timeout, retrying")
                 raise e
               end
 
@@ -206,7 +222,20 @@ END
 
               # Terraform error message was 'volume 'qnap-nfs:104/vm-104-disk-1.raw' does not exist'
               if e.message.gsub(ansi_escape_regex, '') =~ /.*volume .* does not exist/
-                env[:ui].info("Volume not created, retrying")
+                # https://github.com/bpg/terraform-provider-proxmox/issues/1599
+                env[:ui].info("Volume not created, retrying. Error was: #{e.message}")
+                raise e
+              end
+
+              # Terraform error message was 'clone failed: disk image '/mnt/pve/qnap-nfs/images/104/vm-104-cloudinit.qcow2' already exists'
+              if e.message.gsub(ansi_escape_regex, '') =~ /.*disk image .* already exists/
+                env[:ui].info("Clone failed, retrying. Error was: #{e.message}")
+                raise e
+              end
+
+              # Creation failed. Terraform error message was 'clone failed: unable to create image: qemu-img: /mnt/pve/qnap-nfs/images/105/vm-105-cloudinit.qcow2: Could not create '/mnt/pve/qnap-nfs/images/105/vm-105-cloudinit.qcow2': No such file or directory'
+              if e.message.gsub(ansi_escape_regex, '') =~ /.*unable to create image .* No such file or directory/
+                env[:ui].info("Clone failed, retrying. Error was: #{e.message}")
                 raise e
               end
 
