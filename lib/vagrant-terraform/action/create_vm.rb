@@ -261,9 +261,15 @@ END
                 raise e
               end
 
-              # Creation failed. Terraform error message was 'clone failed: unable to create image: qemu-img: /mnt/pve/qnap-nfs/images/105/vm-105-cloudinit.qcow2: Could not create '/mnt/pve/qnap-nfs/images/105/vm-105-cloudinit.qcow2': No such file or directory'
-              if e.message.gsub(ansi_escape_regex, '') =~ /.*unable to create image .* No such file or directory/
+              # Terraform error message was "clone failed: unable to create image: qemu-img: /mnt/pve/qnap-nfs/images/105/vm-105-cloudinit.qcow2: Could not create '/mnt/pve/qnap-nfs/images/105/vm-105-cloudinit.qcow2': No such file or directory"
+              if e.message.gsub(ansi_escape_regex, '') =~ /.*unable to create image: .* No such file or directory/
                 env[:ui].info("Clone failed, retrying. Error was: #{e.message}")
+                raise e
+              end
+
+              # Terraform error message was 'Request cancelled'
+              if e.message.gsub(ansi_escape_regex, '').include?("Request cancelled")
+                env[:ui].info("Proxmox error: Request cancelled")
                 raise e
               end
 
