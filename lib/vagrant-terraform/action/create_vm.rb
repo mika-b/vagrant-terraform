@@ -172,6 +172,8 @@ END
 
           File.write(terraform_main_file, main_tf)
 
+          # Avoid downloading the provider every time even when it's in the cache
+          ENV['TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE'] = "1"
           retryable(on: Errors::TerraformError, tries: 100, sleep: 1) do
             begin
               terraform_execute(env, 'terraform init')
