@@ -193,7 +193,33 @@ END
 
           retryable(on: Errors::TerraformError, tries: 10, sleep: 1) do
             begin
-              terraform_execute(env, "terraform apply -auto-approve")
+              lockfile = '.vagrant/terraform/lock'
+              max_retries = 300
+              retry_delay = 2
+
+              File.open(lockfile, 'w') do |file|
+                retries = 0
+
+                # VM creation can't be done in parallel because multiple VMs might get the same ID
+                # Get a lock before creating VM with 'terraform apply'
+                until file.flock(File::LOCK_EX | File::LOCK_NB)
+                  if retries >= max_retries
+                    raise Errors::CreateVMError,
+                      :error_message => "Failed to acquire lock after #{max_retries} attempts. Exiting."
+                  end
+
+                  @logger.debug("Lock is currently held. Retrying in #{retry_delay} seconds...")
+                  retries += 1
+                  sleep(retry_delay)
+                end
+
+                begin
+                  terraform_execute(env, "terraform apply -auto-approve")
+                ensure
+                  file.flock(File::LOCK_UN)
+                end
+              end
+
             rescue Errors::TerraformError => e
               # ==> vm_one: terraform stderr: ╷
               # ==> vm_one: │ Error: can't lock file '/var/lock/qemu-server/lock-100.conf' - got timeout

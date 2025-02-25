@@ -22,6 +22,7 @@ module VagrantPlugins
             # dir_name = env[:root_path].basename.to_s.dup.gsub(/[^-a-z0-9_]/i, "")
             begin
               Dir.mkdir(File.dirname(terraform_dir)) unless File.exist?(File.dirname(terraform_dir))
+              FileUtils.touch("#{File.dirname(terraform_dir)}/lock")
             rescue => e
               retry if e.message =~ /File exists/
               env[:ui].error("terraform init failed: #{e.message}")
