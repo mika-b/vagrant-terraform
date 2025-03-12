@@ -67,7 +67,6 @@ resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
         virtio {
             virtio0 {
                 disk {
-                    backup = false
                     storage = "#{config.storage_domain}"
                     size = "#{Filesize.from("#{config.disk_size} B").to_f('GB').to_i}G"
                 }
