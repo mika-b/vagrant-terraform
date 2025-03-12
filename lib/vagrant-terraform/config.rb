@@ -9,6 +9,7 @@ module VagrantPlugins
       attr_accessor :api_url
       attr_accessor :api_token_id
       attr_accessor :api_token_secret
+      attr_accessor :balloon
       attr_accessor :vga
       attr_accessor :insecure
       attr_accessor :debug
@@ -32,6 +33,7 @@ module VagrantPlugins
         @api_url           = UNSET_VALUE
         @api_token_id      = UNSET_VALUE
         @api_token_secret  = UNSET_VALUE
+        @balloon           = UNSET_VALUE
         @vga               = UNSET_VALUE
         @insecure          = UNSET_VALUE
         @debug             = UNSET_VALUE
@@ -66,6 +68,7 @@ module VagrantPlugins
         @cpu_cores = 1 if @cpu_cores == UNSET_VALUE
         @cpu_type = 'host' if @cpu_type == UNSET_VALUE
         @memory_size = '512 MiB' if @memory_size == UNSET_VALUE
+        @balloon = @memory_size if @balloon == UNSET_VALUE
         @target_node = nil if @target_node == UNSET_VALUE
         @onboot = false if @onboot == UNSET_VALUE
         @description = '' if @description == UNSET_VALUE
@@ -87,6 +90,12 @@ module VagrantPlugins
           @memory_size = Filesize.from(@memory_size).to_f('B').to_i
         rescue ArgumentError
           raise "Not able to parse `memory_size`."
+        end
+
+        begin
+          @balloon = Filesize.from(@balloon).to_f('B').to_i
+        rescue ArgumentError
+          raise "Not able to parse `balloon`."
         end
       end
 

@@ -51,7 +51,8 @@ resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
     full_clone = "#{config.full_clone}"
     cores      = #{config.cpu_cores.to_i}
     cpu_type   = "#{config.cpu_type}"
-    memory     = #{Filesize.from("#{config.memory_size} B").to_f('MiB').to_i}
+    memory     = #{Filesize.from("#{config.memory_size} B").to_f('MB').to_i}
+    balloon    = #{Filesize.from("#{config.balloon} B").to_f('MB').to_i}
     onboot     = #{config.onboot}
     agent      = 1
     vga {
