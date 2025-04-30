@@ -3,7 +3,7 @@ require 'socket'
 require 'timeout'
 require 'vagrant-terraform/util/timer'
 require 'vagrant-terraform/util/terraform_execute'
-Vagrant.require 'net/ssh'
+require 'net/ssh'
 
 module VagrantPlugins
   module TerraformProvider
