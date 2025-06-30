@@ -31,6 +31,8 @@ module VagrantPlugins
             raise e
           end
 
+          env[:machine].id = nil
+
           @app.call(env)
         end
       end

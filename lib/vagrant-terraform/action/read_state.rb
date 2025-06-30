@@ -47,15 +47,13 @@ module VagrantPlugins
 
             attributes = instances.first["attributes"]
             return :not_created if attributes.nil?
+            return :not_created if attributes["vm_state"].nil?
 
             ip_addr = attributes["default_ipv4_address"]
             unless ip_addr.nil?
               env[:ip_address] = ip_addr
             end
 
-            if attributes["vm_state"].nil?
-              return :not_created
-            end
             return attributes["vm_state"].to_sym
           else
             return :not_created
