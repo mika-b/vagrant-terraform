@@ -70,6 +70,7 @@ resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
                 disk {
                     storage = "#{config.storage_domain}"
                     size = "#{Filesize.from("#{config.disk_size} B").to_f('GB').to_i}G"
+                    format = "#{config.full_clone ? "raw" : "qcow2"}"
                 }
             }
         }
