@@ -82,6 +82,11 @@ resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
             }
         }
     }
+    rng {
+        limit = 1024
+        period = 10000
+        source = "/dev/urandom"
+    }
 %SERIAL%
     nameserver = "#{config.nameserver}"
     searchdomain = "#{config.searchdomain}"
@@ -102,7 +107,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "telmate/proxmox"
-      version = "3.0.2-rc01"
+      version = "3.0.2-rc05"
     }
   }
 }
