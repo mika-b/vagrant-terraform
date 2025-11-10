@@ -7,7 +7,7 @@ module VagrantPlugins
 
       module_function
 
-        def terraform_execute(env, command)
+        def terraform_execute(env, command, ignore_error = nil)
           env[:machine_tf_dir] = ".vagrant/terraform/#{env[:machine].id}" if env[:machine_tf_dir].nil?
           Dir.mkdir(env[:machine_tf_dir]) unless File.exist?(env[:machine_tf_dir])
 
@@ -20,7 +20,7 @@ module VagrantPlugins
               env[:ui].info("terraform status: #{status}")
           end
 
-          if status != 0
+          if status != 0 && !(ignore_error && stderr.include?(ignore_error))
             raise Errors::TerraformError,
                   :error_message => "terraform command '#{command}' failed with status: #{status}, stderr: #{stderr}"
           end

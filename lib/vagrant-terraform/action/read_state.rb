@@ -30,7 +30,7 @@ module VagrantPlugins
             # read_state might get called several times. Avoid refreshing 5 times in a row
             # for example during "vagrant up" for no obvious reason.
             if $terraform_refreshed.nil?
-              terraform_execute(env, 'terraform refresh')
+              terraform_execute(env, 'terraform refresh', 'is not running')
               $terraform_refreshed = true
             end
 
