@@ -47,6 +47,7 @@ resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
     target_nodes = ["#{config.target_node}"]
     desc       = "#{config.description}"
     vm_state   = "stopped"
+    tags       = ""
     clone      = "#{config.template}"
     full_clone = #{config.full_clone}
     cores      = #{config.cpu_cores.to_i}
