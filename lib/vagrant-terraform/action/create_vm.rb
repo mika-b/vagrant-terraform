@@ -50,6 +50,7 @@ resource "proxmox_vm_qemu" "#{vmname.gsub(/\./, '-')}" {
     tags       = ""
     clone      = "#{config.template}"
     full_clone = #{config.full_clone}
+    #{config.vmid ? "vmid = \"#{config.vmid}\"" : ""}
     cores      = #{config.cpu_cores.to_i}
     cpu_type   = "#{config.cpu_type}"
     memory     = #{Filesize.from("#{config.memory_size} B").to_f('MB').to_i}

@@ -28,6 +28,7 @@ module VagrantPlugins
       attr_accessor :os_type
       attr_accessor :full_clone
       attr_accessor :serial_port
+      attr_accessor :vmid
 
       def initialize
         @api_url           = UNSET_VALUE
@@ -52,6 +53,7 @@ module VagrantPlugins
         @os_type           = UNSET_VALUE
         @full_clone        = UNSET_VALUE
         @serial_port       = UNSET_VALUE
+        @vmid              = UNSET_VALUE
       end
 
       def finalize!
@@ -77,6 +79,27 @@ module VagrantPlugins
         @os_type = 'l26' if @os_type == UNSET_VALUE
         @full_clone = true if @full_clone == UNSET_VALUE
         @serial_port = false if @serial_port == UNSET_VALUE
+
+        @vmid = nil if @vmid == UNSET_VALUE
+
+        if @vmid != nil
+          if @vmid.is_a?(String) && @vmid.include?('-')
+            begin
+              range = @vmid.split('-').map(&:to_i)
+              raise if range.size != 2 || range[0] > range[1] || range[0] < 10000 || range[1] > 999999999
+              @vmid = rand(range[0]..range[1])
+            rescue
+              raise "Invalid vmid range format or out of allowed bounds (10000-999999999): #{@vmid}"
+            end
+          else
+            begin
+              @vmid = @vmid.to_i
+              raise if @vmid < 10000 || @vmid > 999999999
+            rescue
+              raise "Invalid vmid value or out of allowed bounds (10000-999999999): #{@vmid}"
+            end
+          end
+        end
 
         unless disk_size.nil?
           begin

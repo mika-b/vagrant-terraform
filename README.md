@@ -114,6 +114,7 @@ Vagrant.configure("2") do |config|
     terraform.disk_size = '15 GB'
     terraform.target_node = 'pve1'
     terraform.storage_domain = '[STORAGE_NAME]'
+    terraform.vmid = '10000-9999999' # Randomly select a VMID in this range. Optional, defaults to first free
     terraform.nameserver = '1.1.1.1 1.0.0.1'
     terraform.searchdomain = 'example.com'
   end
