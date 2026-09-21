@@ -25,7 +25,7 @@ module VagrantPlugins
           begin
             terraform_dir = env[:machine_tf_dir]
             terraform_main_file = "#{terraform_dir}/main.tf"
-            update_vm_state(terraform_main_file, "running")
+            update_vm_state(terraform_main_file, "vm_state", "\"running\"")
             terraform_execute(env, 'terraform apply -auto-approve')
           rescue Exception => e
             fault_message = /Error was \"\[?(.+?)\]?\".*/.match(e.message)[1] rescue e.message

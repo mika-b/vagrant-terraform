@@ -23,7 +23,7 @@ module VagrantPlugins
           begin
             terraform_dir = ".vagrant/terraform/#{env[:machine].id}"
             terraform_main_file = "#{terraform_dir}/main.tf"
-            update_vm_state(terraform_main_file, "stopped")
+            update_vm_state(terraform_main_file, "vm_state", "\"stopped\"")
             terraform_execute(env, 'terraform apply -auto-approve')
           rescue Exception => e
             # TODO: need to retry in some case?

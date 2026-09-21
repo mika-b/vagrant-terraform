@@ -5,14 +5,14 @@ module VagrantPlugins
 
       module_function
 
-        def update_vm_state(file_path, new_state)
+        def update_vm_state(file_path, key, formatted_value)
           # Read the file contents
           lines = File.readlines(file_path)
 
-          # Update the line containing "vm_state"
+          # Update the line containing the given key
           updated_lines = lines.map do |line|
-            if line.strip.start_with?("vm_state")
-              line.gsub(/vm_state\s*=\s*".*"/, "vm_state = \"#{new_state}\"")
+            if line.strip.start_with?(key)
+              line.gsub(/#{Regexp.escape(key)}\s*=\s*\S.*/, "#{key} = #{formatted_value}")
             else
               line
             end
