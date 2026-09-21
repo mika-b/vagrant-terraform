@@ -8,3 +8,4 @@
 /manifests
 vendor
 tmp
+/.worktrees
