@@ -42,6 +42,7 @@ module VagrantPlugins
         # data is the parsed `data` field from GET .../status/current.
         # Returns :running or :stopped.
         def extract_status(data)
+          return :stopped if data.nil?
           data["status"] == "running" ? :running : :stopped
         end
 
@@ -49,6 +50,7 @@ module VagrantPlugins
         # of interface hashes). Returns the IPv4 address (without prefix) of
         # the named interface, or nil if it has none yet.
         def extract_ip(data, iface_name = "eth0")
+          return nil unless data.is_a?(Array)
           iface = data.find { |i| i["name"] == iface_name }
           return nil if iface.nil? || iface["inet"].nil?
 

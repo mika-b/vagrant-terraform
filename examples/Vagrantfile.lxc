@@ -8,9 +8,9 @@ Vagrant.configure("2") do |config|
   config.ssh.forward_agent = true
 
   config.vm.network :private_network,
-    :terraform__network_name => 'testmgmt' # DHCP
-  config.vm.network :private_network,
     :terraform__network_name => 'vmbr0', :terraform__ip => '192.168.0.52/24', :terraform__gateway => '192.168.0.1'
+  config.vm.network :private_network,
+    :terraform__network_name => 'testmgmt' # DHCP
 
   config.vm.provider :terraform do |terraform|
     terraform.guest_type = :container

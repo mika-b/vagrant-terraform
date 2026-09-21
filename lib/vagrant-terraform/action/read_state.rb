@@ -61,7 +61,18 @@ module VagrantPlugins
           return :not_created if vmid.nil?
 
           config = env[:machine].provider_config
-          Util::ProxmoxApi.container_status(config, config.target_node, vmid)
+          status = Util::ProxmoxApi.container_status(config, config.target_node, vmid)
+
+          if status == :running
+            begin
+              ip = Util::ProxmoxApi.container_ip(config, config.target_node, vmid)
+              env[:ip_address] = ip unless ip.nil?
+            rescue Errors::ProxmoxApiError => e
+              @logger.debug("container IP lookup failed: #{e.message}")
+            end
+          end
+
+          status
         end
       end
     end

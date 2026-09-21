@@ -65,7 +65,12 @@ module VagrantPlugins
               next if env[:interrupted]
 
               ip_addr = if config.guest_type == :container
-                          Util::ProxmoxApi.container_ip_for_machine(env[:machine_tf_dir], config)
+                          begin
+                            Util::ProxmoxApi.container_ip_for_machine(env[:machine_tf_dir], config)
+                          rescue Errors::ProxmoxApiError => e
+                            @logger.debug("container IP lookup failed, retrying: #{e.message}")
+                            nil
+                          end
                         else
                           output = terraform_execute(env, "terraform refresh")
                           output.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)&.to_s

@@ -37,20 +37,23 @@ module VagrantPlugins
           vmname = machine_vmname(env[:machine])
 
           networks = []
-          env[:machine].config.vm.networks.each_with_index do |network, idx|
+          private_network_idx = 0
+          env[:machine].config.vm.networks.each do |network|
             type, options = network
             next unless type == :private_network
 
             if !options[:terraform__ip].nil? && !options[:terraform__ip].include?("/")
               raise "IP must be given in CIDR form, for example 192.168.0.10/24"
             end
+            raise "'terraform__network_name' must be set for each private network." if options[:terraform__network_name].nil?
 
             networks << {
-              :idx => idx,
+              :idx => private_network_idx,
               :bridge => options[:terraform__network_name],
               :ip => options[:terraform__ip] || "dhcp",
               :gateway => options[:terraform__gateway],
             }
+            private_network_idx += 1
           end
 
           env[:ui].info(I18n.t("vagrant_terraform.creating_container"))
@@ -172,7 +175,7 @@ module VagrantPlugins
         # `networks` is an array of {:idx, :bridge, :ip, :gateway} hashes.
         def render_main_tf(config, vmname, networks)
           network_blocks = networks.map do |net|
-            gw_line = net[:gateway].nil? ? "" : "\n        gw     = \"#{net[:gateway]}\""
+            gw_line = (net[:gateway].nil? || net[:ip] == "dhcp") ? "" : "\n        gw     = \"#{net[:gateway]}\""
             <<-NET
     network {
         name   = "eth#{net[:idx]}"

@@ -29,16 +29,19 @@ module VagrantPlugins
           config = machine.provider_config
 
           ip_addr = if config.guest_type == :container
-                      Util::ProxmoxApi.container_ip_for_machine(env[:machine_tf_dir], config)
+                      begin
+                        Util::ProxmoxApi.container_ip_for_machine(env[:machine_tf_dir], config)
+                      rescue Errors::ProxmoxApiError => e
+                        @logger.debug("container IP lookup failed: #{e.message}")
+                        nil
+                      end
                     else
                       terraform_execute(env, "terraform output -raw public_ip")
                     end
           return nil if ip_addr.nil?
 
           username = machine.config.ssh.username
-          if config.guest_type == :container && username == "vagrant"
-            username = "root"
-          end
+          username = "root" if config.guest_type == :container && username.nil?
 
           return {
             :host             => ip_addr,
