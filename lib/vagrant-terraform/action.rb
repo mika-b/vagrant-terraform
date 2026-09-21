@@ -26,7 +26,11 @@ module VagrantPlugins
             end
 
             if env[:machine_state_id] == :not_created
-              b2.use CreateVM
+              if env[:machine].provider_config.guest_type == :container
+                b2.use CreateContainer
+              else
+                b2.use CreateVM
+              end
               b2.use Provision
               b2.use SetHostname
             end
@@ -170,6 +174,7 @@ module VagrantPlugins
       action_root = Pathname.new(File.expand_path("../action", __FILE__))
       autoload :SetupTerraform, action_root.join("setup_terraform")
       autoload :CreateVM, action_root.join("create_vm")
+      autoload :CreateContainer, action_root.join("create_container")
       autoload :DestroyVM, action_root.join("destroy_vm")
       autoload :HaltVM, action_root.join("halt_vm")
       autoload :IsCreated, action_root.join("is_created")

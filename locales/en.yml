@@ -2,6 +2,8 @@ en:
   vagrant_terraform:
     creating_vm: |-
       Creating VM with the following settings...
+    creating_container: |-
+      Creating LXC container with the following settings...
     starting_vm: |-
       Starting VM.
     not_created: |-
