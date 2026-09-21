@@ -1,0 +1,37 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = 'dummy'
+  config.vm.box_url = 'https://github.com/mika-b/vagrant-terraform/blob/main/example_box/dummy.box?raw=true'
+
+  config.vm.hostname = "example-container.local"
+
+  config.vm.synced_folder './', '/vagrant', type: 'rsync', rsync__exclude: ["log/", ".git/"]
+  config.ssh.forward_agent = true
+
+  config.vm.network :private_network,
+    :terraform__network_name => 'testmgmt' # DHCP
+  config.vm.network :private_network,
+    :terraform__network_name => 'vmbr0', :terraform__ip => '192.168.0.52/24', :terraform__gateway => '192.168.0.1'
+
+  config.vm.provider :terraform do |terraform|
+    terraform.guest_type = :container
+    terraform.api_url = 'https://[PVE_ADDRESS]:8006/api2/json'
+    terraform.api_token_id = "terraform@pve!automation"
+    terraform.api_token_secret = "[API_TOKEN]"
+    terraform.insecure = true
+    terraform.debug = false
+    terraform.description = "Created by: #{ENV['USER']}"
+    terraform.ostemplate = 'local:vztmpl/ubuntu-24.04-standard_24.04-1_amd64.tar.zst'
+    terraform.unprivileged = true
+    terraform.cpu_cores = 2
+    terraform.memory_size = '2 GiB'
+    terraform.disk_size = '8 GB'
+    terraform.target_node = 'pve1'
+    terraform.storage_domain = '[STORAGE_NAME]'
+    terraform.nameserver = '1.1.1.1 1.0.0.1'
+    terraform.searchdomain = 'example.com'
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    ip a
+SHELL
+end

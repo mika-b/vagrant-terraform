@@ -124,3 +124,55 @@ Vagrant.configure("2") do |config|
 SHELL
 end
 ```
+
+### LXC container example
+
+Containers use `terraform.guest_type = :container` and an `ostemplate` (a
+Proxmox CT template volume id) instead of a VM `template`. Download one with,
+e.g.:
+```
+pveam update
+pveam available --section system | grep ubuntu-24.04
+pveam download local ubuntu-24.04-standard_24.04-1_amd64.tar.zst
+```
+
+Unlike the VM path, no image customization is needed for SSH access — the
+plugin injects the vagrant insecure keypair via `ssh_public_keys`, which
+Proxmox writes to root's `authorized_keys` on stock CT templates. SSH
+defaults to the `root` user for containers unless `config.ssh.username` is
+set explicitly.
+
+```ruby
+Vagrant.configure("2") do |config|
+  config.vm.box = 'dummy'
+  config.vm.hostname = "example-container.local"
+
+  config.vm.network :private_network,
+    :terraform__network_name => 'vmbr0', :terraform__ip => '192.168.0.52/24', :terraform__gateway => '192.168.0.1'
+
+  config.vm.provider :terraform do |terraform|
+    terraform.guest_type = :container
+    terraform.api_url = 'https://[PVE_ADDRESS]:8006/api2/json'
+    terraform.api_token_id = "terraform@pve!automation"
+    terraform.api_token_secret = "[API_TOKEN]"
+    terraform.insecure = true
+    terraform.ostemplate = 'local:vztmpl/ubuntu-24.04-standard_24.04-1_amd64.tar.zst'
+    terraform.unprivileged = true
+    terraform.cpu_cores = 2
+    terraform.memory_size = '2 GiB'
+    terraform.disk_size = '8 GB'
+    terraform.target_node = 'pve1'
+    terraform.storage_domain = '[STORAGE_NAME]'
+  end
+end
+```
+
+A full example is in [`examples/Vagrantfile.lxc`](examples/Vagrantfile.lxc).
+
+The following VM-only options are ignored when `guest_type = :container`:
+`vga`, `balloon`, `cpu_type`, `template`, `full_clone`, `serial_port`,
+`os_type`.
+
+Not yet supported for containers (may be added later): cloning from an
+existing LXC container, extra `mountpoint`s beyond the root filesystem, the
+`features` block (nesting/fuse/keyctl), resource pools, HA state, IPv6.
