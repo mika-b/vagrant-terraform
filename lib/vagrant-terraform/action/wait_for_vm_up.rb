@@ -3,6 +3,7 @@ require 'socket'
 require 'timeout'
 require 'vagrant-terraform/util/timer'
 require 'vagrant-terraform/util/terraform_execute'
+require 'vagrant-terraform/util/proxmox_api'
 require 'net/ssh'
 
 module VagrantPlugins
@@ -54,16 +55,22 @@ module VagrantPlugins
         def call(env)
           # Initialize metrics if they haven't been
           env[:metrics] ||= {}
+          config = env[:machine].provider_config
 
-          # Wait for VM to obtain an ip address.
+          # Wait for VM/container to obtain an ip address.
           env[:metrics]["instance_ip_time"] = Util::Timer.time do
             env[:ui].info(I18n.t("vagrant_terraform.waiting_for_ip"))
             for attempt in 1..100
               # If we're interrupted don't worry about waiting
               next if env[:interrupted]
 
-              output = terraform_execute(env, "terraform refresh")
-              ip_addr = output.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)&.to_s
+              ip_addr = if config.guest_type == :container
+                          Util::ProxmoxApi.container_ip_for_machine(env[:machine_tf_dir], config)
+                        else
+                          output = terraform_execute(env, "terraform refresh")
+                          output.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)&.to_s
+                        end
+
               unless ip_addr.nil?
                 env[:ui].info("Got IP (attempt #{attempt}): #{ip_addr}")
                 # Check if SSH-Server is up
