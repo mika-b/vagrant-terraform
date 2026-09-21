@@ -29,6 +29,9 @@ module VagrantPlugins
       attr_accessor :full_clone
       attr_accessor :serial_port
       attr_accessor :vmid
+      attr_accessor :guest_type
+      attr_accessor :ostemplate
+      attr_accessor :unprivileged
 
       def initialize
         @api_url           = UNSET_VALUE
@@ -54,6 +57,9 @@ module VagrantPlugins
         @full_clone        = UNSET_VALUE
         @serial_port       = UNSET_VALUE
         @vmid              = UNSET_VALUE
+        @guest_type        = UNSET_VALUE
+        @ostemplate        = UNSET_VALUE
+        @unprivileged      = UNSET_VALUE
       end
 
       def finalize!
@@ -100,6 +106,18 @@ module VagrantPlugins
             end
           end
         end
+
+        if @guest_type == UNSET_VALUE
+          @guest_type = :vm
+        else
+          @guest_type = @guest_type.to_s.to_sym
+          unless [:vm, :container].include?(@guest_type)
+            raise "Invalid 'guest_type' #{@guest_type.inspect}. Must be :vm or :container."
+          end
+        end
+
+        @ostemplate = nil if @ostemplate == UNSET_VALUE
+        @unprivileged = true if @unprivileged == UNSET_VALUE
 
         unless disk_size.nil?
           begin
