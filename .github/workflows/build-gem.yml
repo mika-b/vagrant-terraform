@@ -1,19 +1,46 @@
 name: Ruby Gem
-on: 
+on:
   push:
     tags:
       - release/*
 
 jobs:
   build:
-    name: Build + Publish
+    name: Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
 
     steps:
     - uses: actions/checkout@v4
+    - name: Set up Ruby 3.3.6
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.3.6
+
+    - name: Build gem
+      run: gem build *.gemspec
+
+    - name: Upload gem artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: gem
+        path: '*.gem'
+        retention-days: 1
+
+  publish:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: Download gem artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: gem
+
     - name: Set up Ruby 3.3.6
       uses: ruby/setup-ruby@v1
       with:
@@ -25,8 +52,6 @@ jobs:
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
         printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-        gem build *.gemspec
         gem push *.gem
       env:
         GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_AUTH_TOKEN}}"
-
