@@ -21,9 +21,14 @@ module VagrantPlugins
           env[:ui].info(I18n.t("vagrant_terraform.halt_vm"))
 
           begin
+            config = env[:machine].provider_config
             terraform_dir = ".vagrant/terraform/#{env[:machine].id}"
             terraform_main_file = "#{terraform_dir}/main.tf"
-            update_vm_state(terraform_main_file, "vm_state", "\"stopped\"")
+            if config.guest_type == :container
+              update_vm_state(terraform_main_file, "start", "false")
+            else
+              update_vm_state(terraform_main_file, "vm_state", "\"stopped\"")
+            end
             terraform_execute(env, 'terraform apply -auto-approve')
           rescue Exception => e
             # TODO: need to retry in some case?
