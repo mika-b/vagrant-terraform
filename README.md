@@ -140,7 +140,11 @@ Unlike the VM path, no image customization is needed for SSH access — the
 plugin injects the vagrant insecure keypair via `ssh_public_keys`, which
 Proxmox writes to root's `authorized_keys` on stock CT templates. SSH
 defaults to the `root` user for containers unless `config.ssh.username` is
-set explicitly.
+set explicitly. Since root doesn't need to escalate privileges, the plugin
+also points Vagrant's `sudo_command` at a no-op wrapper for containers —
+Vagrant's own guest capabilities (installing rsync, setting the hostname,
+etc.) always run their setup commands through `sudo` otherwise, which fails
+on stock CT templates that don't ship a `sudo` binary at all.
 
 ```ruby
 Vagrant.configure("2") do |config|

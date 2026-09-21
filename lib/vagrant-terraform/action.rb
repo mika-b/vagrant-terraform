@@ -17,6 +17,15 @@ module VagrantPlugins
             b2.use SetupTerraform
             # synced_folders defaults to NFS on linux. Make it default to rsync.
             env[:machine].config.nfs.functional = false
+            # Containers SSH in as root (see ReadSSHInfo); Vagrant's guest
+            # capabilities (e.g. installing rsync) still unconditionally wrap
+            # their commands in config.ssh.sudo_command, and stock CT
+            # templates commonly don't have a `sudo` binary at all. As root
+            # there's nothing to escalate to, so make the wrapper a no-op.
+            if env[:machine].provider_config.guest_type == :container &&
+               env[:machine].config.ssh.sudo_command == "sudo -E -H %c"
+              env[:machine].config.ssh.sudo_command = "%c"
+            end
             if env[:machine_state_id] == :running
               b2.use Provision
               b2.use SyncedFolderCleanup
@@ -73,6 +82,13 @@ module VagrantPlugins
           b.use Call, IsCreated do |env, b2|
             # synced_folders defaults to NFS on linux. Make it default to rsync.
             env[:machine].config.nfs.functional = false
+            # See action_up: containers SSH in as root, and stock CT
+            # templates commonly lack a `sudo` binary that Vagrant's guest
+            # capabilities would otherwise unconditionally wrap commands in.
+            if env[:machine].provider_config.guest_type == :container &&
+               env[:machine].config.ssh.sudo_command == "sudo -E -H %c"
+              env[:machine].config.ssh.sudo_command = "%c"
+            end
             if !env[:result]
               env[:ui].info(I18n.t("vagrant_terraform.not_created"))
               next
