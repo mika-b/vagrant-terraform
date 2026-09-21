@@ -1,5 +1,6 @@
 require "log4r"
 require 'vagrant-terraform/util/terraform_execute'
+require 'vagrant-terraform/util/proxmox_api'
 
 module VagrantPlugins
   module TerraformProvider
@@ -25,14 +26,24 @@ module VagrantPlugins
         # Otherwise, it returns nil.
         def read_ssh_info(env)
           machine = env[:machine]
+          config = machine.provider_config
 
-          ip_addr = terraform_execute(env, "terraform output -raw public_ip")
+          ip_addr = if config.guest_type == :container
+                      Util::ProxmoxApi.container_ip_for_machine(env[:machine_tf_dir], config)
+                    else
+                      terraform_execute(env, "terraform output -raw public_ip")
+                    end
           return nil if ip_addr.nil?
+
+          username = machine.config.ssh.username
+          if config.guest_type == :container && username == "vagrant"
+            username = "root"
+          end
 
           return {
             :host             => ip_addr,
             :port             => machine.config.ssh.guest_port,
-            :username         => machine.config.ssh.username,
+            :username         => username,
             :private_key_path => machine.config.ssh.private_key_path,
             :forward_agent    => machine.config.ssh.forward_agent,
             :forward_x11      => machine.config.ssh.forward_x11,
