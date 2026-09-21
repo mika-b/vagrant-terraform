@@ -48,3 +48,5 @@ en:
         The VM has not reported an IP address. Please ensure the qemu-guest-agent is running and the machine is up.
       terraform_execution_error: |-
         Terraforming failed. Error was '%{error_message}'
+      proxmox_api_error: |-
+        Proxmox API request failed. Error was '%{error_message}'

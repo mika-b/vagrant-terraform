@@ -27,6 +27,10 @@ module VagrantPlugins
         error_key(:terraform_execution_error)
       end
 
+      class ProxmoxApiError < VagrantTerraformError
+        error_key(:proxmox_api_error)
+      end
+
     end
   end
 end
