@@ -26,6 +26,19 @@ module VagrantPlugins
                env[:machine].config.ssh.sudo_command == "sudo -E -H %c"
               env[:machine].config.ssh.sudo_command = "%c"
             end
+            # Same reasoning for the rsync synced-folder implementation: its
+            # default --rsync-path is the literal string "sudo rsync"
+            # (plugins/synced_folders/rsync/default_unix_cap.rb), applied
+            # regardless of the connected user, and independent of
+            # config.ssh.sudo_command above (it's passed straight to the
+            # local rsync binary's -e/--rsync-path, not through the SSH
+            # communicator). rsync__rsync_path is Vagrant's own documented
+            # per-synced-folder override for exactly this.
+            if env[:machine].provider_config.guest_type == :container
+              env[:machine].config.vm.synced_folders.each_value do |folder_opts|
+                folder_opts[:rsync__rsync_path] ||= "rsync"
+              end
+            end
             if env[:machine_state_id] == :running
               b2.use Provision
               b2.use SyncedFolderCleanup
@@ -88,6 +101,14 @@ module VagrantPlugins
             if env[:machine].provider_config.guest_type == :container &&
                env[:machine].config.ssh.sudo_command == "sudo -E -H %c"
               env[:machine].config.ssh.sudo_command = "%c"
+            end
+            # See action_up: rsync's default --rsync-path is "sudo rsync"
+            # regardless of the connected user, and separate from
+            # config.ssh.sudo_command above.
+            if env[:machine].provider_config.guest_type == :container
+              env[:machine].config.vm.synced_folders.each_value do |folder_opts|
+                folder_opts[:rsync__rsync_path] ||= "rsync"
+              end
             end
             if !env[:result]
               env[:ui].info(I18n.t("vagrant_terraform.not_created"))
