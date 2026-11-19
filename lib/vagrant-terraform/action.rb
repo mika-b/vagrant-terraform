@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'vagrant/action/builder'
+require 'vagrant-terraform/util/machine_names'
 
 module VagrantPlugins
   module TerraformProvider
@@ -12,6 +13,7 @@ module VagrantPlugins
         Vagrant::Action::Builder.new.tap do |b|
           b.use HandleBox
           b.use ConfigValidate
+          b.use UpdateIndexState
 
           b.use Call, ReadState do |env, b2|
             b2.use SetupTerraform
@@ -73,9 +75,15 @@ module VagrantPlugins
           b.use Call, IsCreated do |env, b2|
             if !env[:result]
               unless env[:machine].id.nil?
-                dir = ".vagrant/terraform/#{env[:machine].id}"
+                dir = Util::MachineNames.terraform_dir(env[:machine])
                 env[:ui].info("Removing: " + dir)
                 FileUtils.rm_rf(dir)
+                # Deregister too: clears .vagrant/machines/<name>/<provider>/id
+                # and deletes the global machine index entry, which would
+                # otherwise linger in `vagrant global-status` with whatever
+                # state it last had (e.g. "running") for a machine that no
+                # longer exists.
+                env[:machine].id = nil
               end
               env[:ui].info(I18n.t("vagrant_terraform.not_created"))
               next
@@ -146,6 +154,7 @@ module VagrantPlugins
 
       def self.action_halt
         Vagrant::Action::Builder.new.tap do |b|
+          b.use UpdateIndexState
           b.use Call, IsRunning do |env, b2|
             if env[:machine_state_id] == :powering_up
               env[:ui].info(I18n.t("vagrant_terraform.powering_up"))
@@ -221,6 +230,7 @@ module VagrantPlugins
       autoload :WaitForVmUp, action_root.join("wait_for_vm_up")
 
       autoload :StartVM, action_root.join("start_vm")
+      autoload :UpdateIndexState, action_root.join("update_index_state")
       # autoload :SyncedFolders, 'vagrant/action/builtin/synced_folders'
       autoload :SyncedFolderCleanup, 'vagrant/action/builtin/synced_folder_cleanup'
     end

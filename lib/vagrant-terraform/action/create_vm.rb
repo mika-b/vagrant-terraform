@@ -200,7 +200,7 @@ END
 
           retryable(on: Errors::TerraformError, tries: 10, sleep: 1) do
             begin
-              lockfile = '.vagrant/terraform/lock'
+              lockfile = File.join(terraform_base_dir(env[:machine]), 'lock')
               max_retries = 300
               retry_delay = 2
 

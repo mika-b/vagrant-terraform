@@ -4,8 +4,6 @@ require 'vagrant-terraform/util/machine_names'
 require 'vagrant-terraform/util/terraform_state'
 require 'vagrant-terraform/util/proxmox_api'
 
-$terraform_refreshed = nil
-
 module VagrantPlugins
   module TerraformProvider
     module Action
@@ -26,15 +24,17 @@ module VagrantPlugins
         end
 
         def read_state(env)
-          env[:machine_tf_dir] = ".vagrant/terraform/#{machine_vmname(env[:machine])}"
+          env[:machine_tf_dir] = terraform_dir(env[:machine])
           terraform_state_file = "#{env[:machine_tf_dir]}/terraform.tfstate"
           return :not_created unless File.exist?(env[:machine_tf_dir]) && File.exist?(terraform_state_file)
 
           # read_state might get called several times. Avoid refreshing 5 times in a row
-          # for example during "vagrant up" for no obvious reason.
-          if $terraform_refreshed.nil?
+          # for example during "vagrant up" for no obvious reason. Tracked per
+          # machine: a single process may read the state of several machines
+          # (multi-machine `vagrant status`, `vagrant global-status --prune`),
+          # and each one needs its own refresh.
+          unless terraform_refreshed?(env[:machine_tf_dir])
             terraform_execute(env, 'terraform refresh', 'is not running')
-            $terraform_refreshed = true
           end
 
           attributes = Util::TerraformState.read_attributes(terraform_state_file)

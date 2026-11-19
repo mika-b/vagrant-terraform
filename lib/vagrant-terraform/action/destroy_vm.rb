@@ -21,7 +21,7 @@ module VagrantPlugins
           begin
             # for some reason here the machine_tf_dir is not in env even though read_state has been called
             # multiple times on 'vagrant halt' before we get here.
-            terraform_dir = ".vagrant/terraform/#{env[:machine].id}"
+            terraform_dir = Util::MachineNames.terraform_dir(env[:machine])
 
             terraform_execute(env, 'terraform destroy -auto-approve')
             FileUtils.rm_rf(terraform_dir)

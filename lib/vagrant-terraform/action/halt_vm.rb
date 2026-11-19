@@ -22,7 +22,7 @@ module VagrantPlugins
 
           begin
             config = env[:machine].provider_config
-            terraform_dir = ".vagrant/terraform/#{env[:machine].id}"
+            terraform_dir = Util::MachineNames.terraform_dir(env[:machine])
             terraform_main_file = "#{terraform_dir}/main.tf"
             if config.guest_type == :container
               update_vm_state(terraform_main_file, "start", "false")
