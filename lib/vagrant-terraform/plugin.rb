@@ -21,6 +21,9 @@ module VagrantPlugins
       DESC
 
       config("terraform", :provider) do
+        # Config#finalize!/#validate produce translated messages, and the
+        # config can be finalized before the provider class is loaded.
+        setup_i18n
         require_relative "config"
         Config
       end
@@ -36,8 +39,10 @@ module VagrantPlugins
 
       # This initializes the internationalization strings.
       def self.setup_i18n
-        I18n.load_path << File.expand_path("locales/en.yml",
-          TerraformProvider.source_root)
+        path = File.expand_path("locales/en.yml", TerraformProvider.source_root)
+        return if I18n.load_path.include?(path)
+
+        I18n.load_path << path
         I18n.reload!
       end
 

@@ -61,11 +61,23 @@ module VagrantPlugins
           return :not_created if vmid.nil?
 
           config = env[:machine].provider_config
-          status = Util::ProxmoxApi.container_status(config, config.target_node, vmid)
+          node = Util::ProxmoxApi.container_node(attributes, config)
+
+          begin
+            status = Util::ProxmoxApi.container_status(config, node, vmid)
+          rescue Errors::ProxmoxApiError => e
+            # Don't let an unreachable API (or a token lacking rights) abort
+            # every command: report :unknown, which still counts as created,
+            # so `vagrant destroy` can proceed (terraform resolves the
+            # container itself) and `global-status --prune` keeps the entry.
+            @logger.warn("container status lookup failed: #{e.message}")
+            env[:ui].warn("Unable to read container #{vmid} state from Proxmox node '#{node}': #{e.message}")
+            return :unknown
+          end
 
           if status == :running
             begin
-              ip = Util::ProxmoxApi.container_ip(config, config.target_node, vmid)
+              ip = Util::ProxmoxApi.container_ip(config, node, vmid)
               env[:ip_address] = ip unless ip.nil?
             rescue Errors::ProxmoxApiError => e
               @logger.debug("container IP lookup failed: #{e.message}")

@@ -1,6 +1,7 @@
 require 'log4r'
 require 'vagrant-terraform/util/machine_names'
 require 'vagrant-terraform/util/terraform_execute'
+require 'vagrant-terraform/util/vmid_conflict'
 require 'vagrant/util/retryable'
 
 module VagrantPlugins
@@ -19,18 +20,6 @@ module VagrantPlugins
         def call(env)
           # Get config.
           config = env[:machine].provider_config
-          if config.target_node.nil?
-            raise "'target_node' must not be empty."
-          end
-
-          if config.storage_domain.nil?
-            raise "'storage_domain' must not be empty."
-          end
-
-          if config.disk_size.nil?
-            raise "'disk_size' must be set."
-          end
-
           vmname = machine_vmname(env[:machine])
 
           main_tf = <<-END
@@ -144,11 +133,8 @@ END
 
             # Only private networks are supported
             next unless type == :private_network
+            # IP format and network name are checked in Config#validate.
             if ! options[:terraform__ip].nil?
-              if ! options[:terraform__ip].include? "/"
-                raise "IP must be given in CIDR form, for example 192.168.0.10/24"
-              end
-
               if options[:terraform__gateway].nil?
                 network_str = network_template.gsub(/%IP%/, "ip=#{options[:terraform__ip]}")
               else
@@ -195,6 +181,15 @@ END
                 @logger.debug("Failed to install provider, retrying")
                 raise e
               end
+
+              # Anything else is not transient: surface it now rather than
+              # carrying on to an `apply` that fails with a misleading error.
+              # (Not as a TerraformError -- retryable would retry that.)
+              fault_message = e.message
+              unless config.debug
+                fault_message = /Error: (.*)/.match(e.message.gsub(ansi_escape_regex, ''))[1] rescue e.message
+              end
+              raise Errors::CreateVMError, :error_message => "terraform init failed: #{fault_message}"
             end
           end
 
@@ -280,18 +275,20 @@ END
                 raise e
               end
 
-              if e.message.gsub(ansi_escape_regex, '') =~ /.*Error: [0-9 ]*unable to create VM [0-9]*: config file already exists/
-                env[:ui].info("Proxmox ID conflict, retrying")
+              if Util::VmidConflict.conflict?(e.message.gsub(ansi_escape_regex, ''))
+                # Raises CreateVMError if retrying can't help (fixed vmid).
+                Util::VmidConflict.prepare_retry(env, config, terraform_main_file, e.message.gsub(ansi_escape_regex, ''))
                 raise e
               end
 
-              if config.debug
-                raise e
-              else
+              # Not retryable. Always re-raise as CreateVMError: a
+              # TerraformError would be caught by `retryable` and retried.
+              fault_message = e.message
+              unless config.debug
                 fault_message = /Error: (.*)/.match(e.message.gsub(ansi_escape_regex, ''))[1] rescue e.message
-                raise Errors::CreateVMError,
-                  :error_message => fault_message
               end
+              raise Errors::CreateVMError,
+                :error_message => fault_message
             end
           end
 

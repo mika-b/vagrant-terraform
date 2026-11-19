@@ -29,8 +29,14 @@ en:
         The instance is running. Use `vagrant halt` to stop it.
       short_running: |-
         running
+      long_stopped: |-
+        The instance is stopped. Use `vagrant up` to start it.
       short_stopped: |-
         stopped
+      long_unknown: |-
+        The instance state could not be read from Proxmox. Check the API URL, token and network connectivity.
+      short_unknown: |-
+        unknown
       long_down: |-
         The instance is not running. Use `vagrant up` to start it.
       short_down: |-
@@ -47,8 +53,29 @@ en:
       start_vm_error: |-
         Unable to start VM: %{error_message}
       no_ip_error: |-
-        The VM has not reported an IP address. Please ensure the qemu-guest-agent is running and the machine is up.
+        The machine has not reported an IP address. For a VM, ensure the qemu-guest-agent is running and the machine is up. For a container, check that its network bridge and IP (or DHCP) configuration are correct.
       terraform_execution_error: |-
         Terraforming failed. Error was '%{error_message}'
       proxmox_api_error: |-
         Proxmox API request failed. Error was '%{error_message}'
+    config:
+      required: |-
+        '%{field}' must be set.
+      required_for_container: |-
+        '%{field}' must be set for containers.
+      vmid_invalid: |-
+        Invalid 'vmid' %{value}: must be a number between %{min} and %{max}, or a range like '%{min}-%{max}'.
+      vmid_range_invalid: |-
+        Invalid 'vmid' range %{value}: must be 'MIN-MAX' with %{min} <= MIN <= MAX <= %{max}.
+      guest_type_invalid: |-
+        Invalid 'guest_type' %{value}: must be :vm or :container.
+      size_unparsable: |-
+        Unable to parse '%{field}' value %{value}. Use a size such as '2 GiB' or '8 GB'.
+      ip_not_cidr: |-
+        terraform__ip must be given in CIDR form, for example 192.168.0.10/24 (got '%{value}').
+      network_name_missing: |-
+        'terraform__network_name' must be set for each private network.
+      container_no_network: |-
+        A container needs at least one private network, for example:
+          config.vm.network :private_network, :terraform__network_name => "vmbr0"
+        Its first private network becomes eth0, which Vagrant uses to reach the container.

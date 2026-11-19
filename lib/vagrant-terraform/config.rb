@@ -4,6 +4,9 @@ require 'filesize'
 module VagrantPlugins
   module TerraformProvider
     class Config < Vagrant.plugin('2', :config)
+      VMID_MIN = 10000
+      VMID_MAX = 999999999
+
       attr_reader :disks
 
       attr_accessor :api_url
@@ -88,21 +91,36 @@ module VagrantPlugins
 
         @vmid = nil if @vmid == UNSET_VALUE
 
+        # Problems found while coercing values. Reported from #validate as a
+        # normal Vagrant config error, instead of raising here, which
+        # aborts Vagrantfile loading with a raw Ruby stack trace. "@__"
+        # keeps them out of Config#merge.
+        # (@__vmid_range is deliberately not reset: if finalize! runs again,
+        # @vmid is already the Integer picked from the range.)
+        @__finalize_errors = []
+
         if @vmid != nil
           if @vmid.is_a?(String) && @vmid.include?('-')
-            begin
-              range = @vmid.split('-').map(&:to_i)
-              raise if range.size != 2 || range[0] > range[1] || range[0] < 10000 || range[1] > 999999999
-              @vmid = rand(range[0]..range[1])
-            rescue
-              raise "Invalid vmid range format or out of allowed bounds (10000-999999999): #{@vmid}"
+            range = @vmid.split('-').map { |v| Integer(v.strip, exception: false) }
+            if range.size != 2 || range.include?(nil) || range[0] > range[1] ||
+               range[0] < VMID_MIN || range[1] > VMID_MAX
+              @__finalize_errors << I18n.t("vagrant_terraform.config.vmid_range_invalid",
+                                           value: @vmid, min: VMID_MIN, max: VMID_MAX)
+              @vmid = nil
+            else
+              # Kept so a VMID conflict at creation can retry with another
+              # id from the same range (see #reroll_vmid!).
+              @__vmid_range = range[0]..range[1]
+              @vmid = rand(@__vmid_range)
             end
           else
-            begin
-              @vmid = @vmid.to_i
-              raise if @vmid < 10000 || @vmid > 999999999
-            rescue
-              raise "Invalid vmid value or out of allowed bounds (10000-999999999): #{@vmid}"
+            value = @vmid.is_a?(Integer) ? @vmid : Integer(@vmid.to_s.strip, exception: false)
+            if value.nil? || value < VMID_MIN || value > VMID_MAX
+              @__finalize_errors << I18n.t("vagrant_terraform.config.vmid_invalid",
+                                           value: @vmid, min: VMID_MIN, max: VMID_MAX)
+              @vmid = nil
+            else
+              @vmid = value
             end
           end
         end
@@ -112,32 +130,81 @@ module VagrantPlugins
         else
           @guest_type = @guest_type.to_s.to_sym
           unless [:vm, :container].include?(@guest_type)
-            raise "Invalid 'guest_type' #{@guest_type.inspect}. Must be :vm or :container."
+            @__finalize_errors << I18n.t("vagrant_terraform.config.guest_type_invalid",
+                                         value: @guest_type.inspect)
           end
         end
 
         @ostemplate = nil if @ostemplate == UNSET_VALUE
         @unprivileged = true if @unprivileged == UNSET_VALUE
 
-        unless disk_size.nil?
-          begin
-            @disk_size = Filesize.from(@disk_size).to_f('B').to_i
-          rescue ArgumentError
-            raise "Not able to parse 'disk_size' #{@disk_size}."
+        @disk_size = parse_size('disk_size', @disk_size) unless @disk_size.nil?
+        @memory_size = parse_size('memory_size', @memory_size)
+        @balloon = parse_size('balloon', @balloon)
+      end
+
+      # Picks a different vmid from the configured range after a VMID
+      # conflict. Returns the new vmid, or nil when there is nothing else
+      # to try (no range, or a range of one).
+      def reroll_vmid!
+        return nil if @__vmid_range.nil? || @__vmid_range.size < 2
+
+        candidate = @vmid
+        candidate = rand(@__vmid_range) while candidate == @vmid
+        @vmid = candidate
+      end
+
+      def vmid_from_range?
+        !@__vmid_range.nil?
+      end
+
+      def validate(machine)
+        errors = _detected_errors
+        errors.concat(@__finalize_errors || [])
+
+        errors << required('target_node') if @target_node.nil?
+        errors << required('storage_domain') if @storage_domain.nil?
+        errors << required('disk_size') if @disk_size.nil?
+        if @guest_type == :container
+          errors << I18n.t("vagrant_terraform.config.required_for_container", field: 'ostemplate') if @ostemplate.nil?
+        elsif @template.nil?
+          errors << required('template')
+        end
+
+        private_networks = machine.config.vm.networks.select { |type, _| type == :private_network }
+        private_networks.each do |_, options|
+          ip = options[:terraform__ip]
+          if !ip.nil? && !ip.to_s.include?("/")
+            errors << I18n.t("vagrant_terraform.config.ip_not_cidr", value: ip)
+          end
+          if options[:terraform__network_name].nil?
+            errors << I18n.t("vagrant_terraform.config.network_name_missing")
           end
         end
 
-        begin
-          @memory_size = Filesize.from(@memory_size).to_f('B').to_i
-        rescue ArgumentError
-          raise "Not able to parse `memory_size`."
+        # Only private networks become container NICs, and the IP is read
+        # from eth0. Without one the container gets no interface at all and
+        # `vagrant up` would just time out waiting for an IP.
+        if @guest_type == :container && private_networks.empty?
+          errors << I18n.t("vagrant_terraform.config.container_no_network")
         end
 
-        begin
-          @balloon = Filesize.from(@balloon).to_f('B').to_i
-        rescue ArgumentError
-          raise "Not able to parse `balloon`."
-        end
+        { "Terraform Provider" => errors }
+      end
+
+      private
+
+      def required(field)
+        I18n.t("vagrant_terraform.config.required", field: field)
+      end
+
+      # Parses a human-readable size ("2 GiB", "8 GB", or a byte count) into
+      # bytes. On failure records an error and returns the value unchanged.
+      def parse_size(field, value)
+        Filesize.from(value.to_s).to_f('B').to_i
+      rescue ArgumentError
+        @__finalize_errors << I18n.t("vagrant_terraform.config.size_unparsable", field: field, value: value)
+        value
       end
 
     end

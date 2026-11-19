@@ -1,4 +1,5 @@
 require 'vagrant'
+require 'vagrant-terraform/util/container_ssh'
 
 module VagrantPlugins
   module TerraformProvider
@@ -9,6 +10,7 @@ module VagrantPlugins
     class Provider < Vagrant.plugin('2', :provider)
       def initialize(machine)
         @machine = machine
+        Util::ContainerSsh.apply_overrides(machine)
       end
 
       # This should return an action callable for the given name.

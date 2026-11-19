@@ -114,7 +114,7 @@ Vagrant.configure("2") do |config|
     terraform.disk_size = '15 GB'
     terraform.target_node = 'pve1'
     terraform.storage_domain = '[STORAGE_NAME]'
-    terraform.vmid = '10000-9999999' # Randomly select a VMID in this range. Optional, defaults to first free
+    terraform.vmid = '10000-9999999' # Randomly select a VMID in this range (another one is tried if it's taken). Optional, defaults to first free
     terraform.nameserver = '1.1.1.1 1.0.0.1'
     terraform.searchdomain = 'example.com'
   end
@@ -140,11 +140,20 @@ Unlike the VM path, no image customization is needed for SSH access — the
 plugin injects the vagrant insecure keypair via `ssh_public_keys`, which
 Proxmox writes to root's `authorized_keys` on stock CT templates. SSH
 defaults to the `root` user for containers unless `config.ssh.username` is
-set explicitly. Since root doesn't need to escalate privileges, the plugin
-also points Vagrant's `sudo_command` at a no-op wrapper for containers —
-Vagrant's own guest capabilities (installing rsync, setting the hostname,
-etc.) always run their setup commands through `sudo` otherwise, which fails
-on stock CT templates that don't ship a `sudo` binary at all.
+set explicitly. When logging in as root, which doesn't need to escalate
+privileges, the plugin also points Vagrant's `sudo_command` at a no-op
+wrapper and runs rsync without `sudo`. Vagrant's own guest capabilities
+(installing rsync, setting the hostname, etc.) always run their setup
+commands through `sudo` otherwise, which fails on stock CT templates that
+don't ship a `sudo` binary at all. With a non-root `config.ssh.username`,
+`sudo` is used as normal.
+
+A container needs at least one `private_network`; the first one becomes
+`eth0`, which Vagrant uses to reach the container.
+
+Containers are started and stopped (`vagrant up` / `vagrant halt`) through
+the Proxmox API rather than `terraform apply`, so the API token needs
+`VM.PowerMgmt` (included in the role above).
 
 ```ruby
 Vagrant.configure("2") do |config|

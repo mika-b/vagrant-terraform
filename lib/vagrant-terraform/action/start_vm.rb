@@ -2,6 +2,7 @@ require 'log4r'
 require 'vagrant-terraform/errors'
 require 'vagrant-terraform/util/terraform_execute'
 require 'vagrant-terraform/util/update_vm_state'
+require 'vagrant-terraform/util/proxmox_api'
 
 module VagrantPlugins
   module TerraformProvider
@@ -24,13 +25,16 @@ module VagrantPlugins
 
           begin
             terraform_dir = env[:machine_tf_dir]
-            terraform_main_file = "#{terraform_dir}/main.tf"
             if config.guest_type == :container
-              update_vm_state(terraform_main_file, "start", "true")
+              # Via the API, not terraform: see ProxmoxApi.set_container_power.
+              ref = Util::ProxmoxApi.container_ref(terraform_dir, config)
+              raise Errors::StartVMError, :error_message => "no container found in #{terraform_dir}/terraform.tfstate" if ref.nil?
+              Util::ProxmoxApi.set_container_power(config, *ref, :running)
             else
+              terraform_main_file = "#{terraform_dir}/main.tf"
               update_vm_state(terraform_main_file, "vm_state", "\"running\"")
+              terraform_execute(env, 'terraform apply -auto-approve')
             end
-            terraform_execute(env, 'terraform apply -auto-approve')
           rescue Exception => e
             fault_message = /Error was \"\[?(.+?)\]?\".*/.match(e.message)[1] rescue e.message
             # TODO: retry in some case?
